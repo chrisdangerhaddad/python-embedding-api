@@ -1,15 +1,29 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from sentence_transformers import SentenceTransformer
+import requests
+import json
 import time
 
 app = Flask(__name__)
 CORS(app)
 
-# Load the model when the server starts
-print("Loading model...")
-model = SentenceTransformer('all-MiniLM-L6-v2')
-print("Model loaded!")
+HUGGINGFACE_API_TOKEN = os.environ.get("HUGGINGFACE_API_TOKEN")
+API_URL = "https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2"
+headers = {"Authorization": f"Bearer {HUGGINGFACE_API_TOKEN}"}
+
+def get_embedding_from_huggingface(text):
+    payload = {"inputs": text}
+    try:
+        response = requests.post(API_URL, headers=headers, json=payload)
+        response.raise_for_status()  # Raise an exception for bad status codes
+        output = response.json()
+        if isinstance(output, list) and len(output) > 0 and "embedding" in output[0]:
+            return output[0]["embedding"]
+        else:
+            return None
+    except requests.exceptions.RequestException as e:
+        print(f"Error during Hugging Face API request: {e}")
+        return None
 
 @app.route('/get-embedding', methods=['POST'])
 def get_embedding():
@@ -17,10 +31,13 @@ def get_embedding():
     data = request.json
     if not data or 'text' not in data:
         return jsonify({'error': 'No text provided'}), 400
-    
-    # Generate embedding
-    embedding = model.encode(data['text']).tolist()
-    
+
+    # Generate embedding using Hugging Face API
+    embedding = get_embedding_from_huggingface(data['text'])
+
+    if embedding is None:
+        return jsonify({'error': 'Failed to get embedding from Hugging Face API'}), 500
+
     processing_time = time.time() - start_time
     return jsonify({
         'embedding': embedding,
