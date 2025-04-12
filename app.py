@@ -9,7 +9,7 @@ app = Flask(__name__)
 CORS(app)
 
 HUGGINGFACE_API_TOKEN = os.environ.get("HUGGINGFACE_API_TOKEN")
-API_URL = "https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2"
+API_URL = "https://api-inference.huggingface.co/pipeline/feature-extraction/sentence-transformers/all-MiniLM-L6-v2"
 headers = {"Authorization": f"Bearer {HUGGINGFACE_API_TOKEN}"}
 
 def get_embedding_from_huggingface(text):
