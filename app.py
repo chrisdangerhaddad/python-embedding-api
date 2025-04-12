@@ -18,9 +18,12 @@ def get_embedding_from_huggingface(text):
         response = requests.post(API_URL, headers=headers, json=payload)
         response.raise_for_status()  # Raise an exception for bad status codes
         output = response.json()
-        if isinstance(output, list) and len(output) > 0 and "embedding" in output[0]:
-            return output[0]["embedding"]
+        if isinstance(output, list) and len(output) > 0 and isinstance(output[0], float):
+            return output
+        elif isinstance(output, list) and len(output) > 0 and isinstance(output[0], list): # Handle potential nested list
+            return output[0]
         else:
+            print(f"Unexpected output from Hugging Face API: {output}")
             return None
     except requests.exceptions.RequestException as e:
         print(f"Error during Hugging Face API request: {e}")
